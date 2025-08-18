@@ -1,27 +1,34 @@
 package main
 
+import (
+	"os"
+
+	"gopkg.in/yaml.v3"
+)
+
 type ServiceConfig struct {
-	Name              string
-	URL               string
-	HealthCheck       string
-	InternalPrefix    string
-	InternalWhitelist []string
+	Name              string   `yaml:"name"`
+	URL               string   `yaml:"url"`
+	HealthCheck       string   `yaml:"health_check"`
+	InternalPrefix    string   `yaml:"internal_prefix"`
+	InternalWhitelist []string `yaml:"internal_whitelist"`
 }
 
-var Services = []ServiceConfig{
-	{
-		Name:              "users",
-		URL:               "http://localhost:8001",
-		HealthCheck:       "/health",
-		InternalPrefix:    "/users/internal",
-		InternalWhitelist: []string{"127.0.0.1"},
-	},
-	{
-		Name:              "coins",
-		URL:               "http://localhost:8002",
-		HealthCheck:       "/health",
-		InternalPrefix:    "/coins/internal",
-		InternalWhitelist: []string{"127.0.0.1"},
-	},
+type Config struct {
+	Services []ServiceConfig `yaml:"services"`
+}
+
+func LoadConfig(path string) (*Config, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	var cfg Config
+	if err := yaml.Unmarshal(data, &cfg); err != nil {
+		return nil, err
+	}
+
+	return &cfg, nil
 }
 

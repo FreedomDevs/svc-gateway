@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
@@ -25,7 +26,20 @@ func main() {
 	mux := http.NewServeMux()
 	rl := middleware.NewRateLimiter(100, time.Second)
 
-	for _, svcCfg := range Services {
+	cfg, err := LoadConfig("config.yml")
+	if err != nil {
+		log.Fatal("failed to load config:", err)
+	}
+
+	for _, service := range cfg.Services {
+		fmt.Printf("Service: %s\n", service.Name)
+		fmt.Printf("  URL: %s\n", service.URL)
+		fmt.Printf("  HealthCheck: %s\n", service.HealthCheck)
+		fmt.Printf("  InternalPrefix: %s\n", service.InternalPrefix)
+		fmt.Printf("  InternalWhitelist: %v\n", service.InternalWhitelist)
+	}
+
+	for _, svcCfg := range cfg.Services {
 		svc := proxy.NewService(svcCfg.Name, svcCfg.URL, svcCfg.HealthCheck)
 
 		var handler http.Handler = svc.Handler()
