@@ -1,0 +1,29 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        run: echo "${{ secrets.PACKAGES_DEPLOY_KEY }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Build Docker image
+        run: docker build -t ghcr.io/FreedomDevs/svc-gateway:latest .
+
+      - name: Push Docker image
+        run: docker push ghcr.io/FreedomDevs/svc-gateway:latest
+
+      - name: Notify server to pull & deploy
+        run: |
+          curl -X POST https://api.elysium-smp.fun/deploy \
+            -H "Authorization: Bearer ${{ secrets.DEPLOY_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"service":"svc-gateway"}'
+
