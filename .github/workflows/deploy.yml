@@ -22,8 +22,6 @@ jobs:
 
       - name: Notify server to pull & deploy
         run: |
-          curl -X POST https://api.elysium-smp.fun/deploy \
-            -H "Authorization: Bearer ${{ secrets.DEPLOY_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            -d '{"service":"svc-gateway"}'
+          curl -X POST "https://api.elysium-smp.fun/deploy?service=svc-gateway" \
+              -H "Authorization: Bearer ${{ secrets.DEPLOY_TOKEN }}"
 
