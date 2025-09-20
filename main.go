@@ -62,5 +62,5 @@ func main() {
 	})
 
 	fmt.Printf("%s%s%s\n", ColorYellow, "API Gateway running on :8080", ColorReset)
-	http.ListenAndServe(":8080", mux)
+	http.ListenAndServe(":9000", mux)
 }

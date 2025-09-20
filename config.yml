@@ -1,15 +1,15 @@
 services:
   - name: users
-    url: "http://localhost:8001"
+    url: "http://localhost:9002"
     health_check: "/health"
     internal_prefix: "/users/internal"
     internal_whitelist:
       - "127.0.0.1"
 
-  - name: coins
-    url: "http://localhost:8002"
+  - name: applications
+    url: "http://localhost:9003"
     health_check: "/health"
-    internal_prefix: "/coins/internal"
+    internal_prefix: "/applications/internal"
     internal_whitelist:
       - "127.0.0.1"
 
