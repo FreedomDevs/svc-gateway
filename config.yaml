@@ -1,6 +1,7 @@
 gateway:
   host: "[::]:9000"
   max_body_size: 10485760
+  trusted_proxy_ips: []
 
 services:
   svc-users:
@@ -8,5 +9,8 @@ services:
     routes:
       - path: /users
         method: GET
-        auth: required
-        roles: [admin, manager]
+        allow_roles: [admin, manager]
+        special_allow_roles: [server]
+
+allowed_server_tokens:
+  - 843046b669e70d2d8ceaf478cce70a0199671b83a8f065d5b6245a985a81a958 # Токен: ZWx5c2l1bV9tYWluOufZVr6wXCptUoK8fq3vYlqmWRTar/NtWRCJrp6U0iDS
