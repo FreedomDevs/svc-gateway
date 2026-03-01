@@ -237,13 +237,7 @@ async fn handler(
         .await
         .map_err(|_| StatusCode::BAD_GATEWAY)?;
 
-    let allowed_headers = [
-        "content-type",
-        "content-length",
-        "x-trace-id",
-        "x-request-id",
-        "etag",
-    ];
+    let allowed_headers = ["content-type", "content-length", "etag"];
 
     let mut headers = AxumHeaderMap::new();
     for name in &allowed_headers {
