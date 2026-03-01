@@ -12,6 +12,7 @@ pub struct GatewayConfig {
 #[derive(Debug, Deserialize)]
 pub struct GatewaySettings {
     pub host: String,
+    pub max_body_size: usize,
 }
 
 #[derive(Debug, Deserialize)]

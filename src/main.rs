@@ -2,13 +2,17 @@ mod config;
 
 use axum::{
     Router,
-    body::Body,
+    body::{Body, Bytes, to_bytes},
     extract::{Request, State},
     http::{Response, StatusCode},
 };
 use config::loader::load_config;
 use reqwest::Client;
 use std::sync::Arc;
+
+use axum::http::Method as AxumMethod;
+use reqwest::Method as ReqwestMethod;
+use std::str::FromStr;
 
 use crate::config::RouteConfig;
 
@@ -55,12 +59,13 @@ async fn handler(
     req: Request,
 ) -> Result<Response<Body>, StatusCode> {
     let request_path = req.uri().path();
+    let method: &AxumMethod = req.method();
     let mut service_url: Option<String> = None;
     let mut matched_route: Option<RouteConfig> = None;
 
     'outer: for (_, service) in &config.services {
         for route in &service.routes {
-            if match_route(&route.path, request_path).is_some() {
+            if match_route(&route.path, request_path).is_some() && route.method == method.as_str() {
                 service_url = Some(service.base_url.clone());
                 matched_route = Some(route.clone());
                 break 'outer;
@@ -72,13 +77,29 @@ async fn handler(
         return Ok(Response::builder().status(404).body(Body::empty()).unwrap());
     }
 
-    let service_url = format!("{}{}", service_url.unwrap(), request_path);
+    let service_url = format!(
+        "{}{}",
+        service_url.unwrap(),
+        req.uri().path_and_query().unwrap()
+    );
 
     let client = Client::new();
 
-    // Проксируем GET-запрос (можно расширить на POST, PUT и т.д.)
+    let reqwest_method = ReqwestMethod::from_str(req.method().as_str()).map_err(|e| {
+        eprintln!("Failed to parse method: {}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    let body_bytes: Bytes = to_bytes(req.into_body(), config.gateway.max_body_size)
+        .await
+        .map_err(|e| {
+            eprintln!("Failed to read request body: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
     let resp = client
-        .get(&service_url)
+        .request(reqwest_method, &service_url)
+        .body(body_bytes)
         .send()
         .await
         .map_err(|_| StatusCode::BAD_GATEWAY)?;
