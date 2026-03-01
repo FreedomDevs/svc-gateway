@@ -12,8 +12,10 @@ use axum::{
     response::IntoResponse,
 };
 use config::loader::load_config;
-use http::{HeaderMap, HeaderName, HeaderValue};
-use reqwest::Client;
+use reqwest::{
+    Client,
+    header::{HeaderMap, HeaderName, HeaderValue},
+};
 use std::sync::Arc;
 use tokio::{
     signal::unix::{SignalKind, signal},
@@ -133,8 +135,56 @@ async fn handler(
                     return Ok(Response::builder().status(401).body(Body::empty()).unwrap());
                 }
             } else if auth.starts_with("Bearer ") {
-                // Пока не подедрживается
-                return Ok(Response::builder().status(422).body(Body::empty()).unwrap());
+                let user_token_uuid = {
+                    match utils::user_token_decoder::decode_user_token(&auth[7..]) {
+                        Ok(token) => Some(token.uuid),
+                        Err(err) => {
+                            println!("{:#?}", err);
+                            None
+                        }
+                    }
+                };
+
+                if let Some(uuid) = user_token_uuid {
+                    auth_reqwest_headers.insert(
+                        HeaderName::from_static("eauth-type"),
+                        HeaderValue::from_static("user"),
+                    );
+                    auth_reqwest_headers.insert(
+                        HeaderName::from_static("eauth-user-id"),
+                        HeaderValue::from_str(&uuid).unwrap(),
+                    );
+                    let roles = utils::user_token_decoder::get_user_roles(
+                        &cfg.services["svc-users"].base_url,
+                        &uuid,
+                    )
+                    .await
+                    .unwrap();
+
+                    auth_reqwest_headers.insert(
+                        HeaderName::from_static("eauth-user-roles"),
+                        HeaderValue::from_str(&roles.join(",")).unwrap(),
+                    );
+
+                    if let Some(allow_roles) = &matched_route.allow_roles {
+                        let mut has_access: bool = false;
+                        for role in roles {
+                            if allow_roles.contains(&role) {
+                                has_access = true;
+                                break;
+                            }
+                        }
+
+                        if !has_access {
+                            return Ok(Response::builder()
+                                .status(403)
+                                .body(Body::empty())
+                                .unwrap());
+                        }
+                    }
+                } else {
+                    return Ok(Response::builder().status(422).body(Body::empty()).unwrap());
+                }
             } else {
                 return Ok(Response::builder().status(422).body(Body::empty()).unwrap());
             }

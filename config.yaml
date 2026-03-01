@@ -9,7 +9,7 @@ services:
     routes:
       - path: /users
         method: GET
-        allow_roles: [admin, manager]
+        allow_roles: [admin, manager, user]
         special_allow_roles: [server]
 
 allowed_server_tokens:
