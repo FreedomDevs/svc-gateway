@@ -12,7 +12,6 @@ pub struct GatewayConfig {
 #[derive(Debug, Deserialize)]
 pub struct GatewaySettings {
     pub host: String,
-    pub port: u16,
 }
 
 #[derive(Debug, Deserialize)]

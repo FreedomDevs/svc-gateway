@@ -1,10 +1,9 @@
 gateway:
-  host: 0.0.0.0
-  port: 3000
+  host: "[::]:9000"
 
 services:
-  users-service:
-    baseUrl: http://users:8080
+  svc-users:
+    baseUrl: http://localhost:9002
     routes:
       - path: /users
         method: GET
