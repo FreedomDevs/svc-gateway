@@ -197,7 +197,7 @@ async fn handler(
         }
 
         auth_reqwest_headers.insert(
-            HeaderName::from_static("EAuth-Type"),
+            HeaderName::from_static("eauth-type"),
             HeaderValue::from_static("guest"),
         );
     }
