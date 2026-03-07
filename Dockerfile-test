@@ -1,0 +1,4 @@
+FROM rust:1.93-alpine
+WORKDIR /app
+RUN apk add --no-cache cargo-watch openssl-dev openssl-libs-static pkgconfig build-base
+CMD ["cargo", "watch", "-x", "run"]

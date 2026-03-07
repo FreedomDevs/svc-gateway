@@ -1,5 +1,5 @@
 gateway:
-  host: "[::]:9000"
+  host: "[::]:80"
   max_body_size: 10485760
   trusted_proxy_ips: []
 
