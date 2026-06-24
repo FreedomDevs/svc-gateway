@@ -4,5 +4,7 @@ pkgs.mkShell {
     pkg-config
     cargo
     openssl
+    rustfmt
+    clippy
   ];
 }

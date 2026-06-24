@@ -1,4 +1,5 @@
 mod config;
+mod subscribe;
 mod utils;
 
 use axum::{
@@ -7,11 +8,10 @@ use axum::{
     extract::{Request, State},
     http::{
         HeaderMap as AxumHeaderMap, HeaderName as AxumHeaderName, HeaderValue as AxumHeaderValue,
+        Response, StatusCode,
     },
-    http::{Response, StatusCode},
     response::IntoResponse,
 };
-use config::loader::load_config;
 use reqwest::{
     Client,
     header::{HeaderMap, HeaderName, HeaderValue},
@@ -19,25 +19,40 @@ use reqwest::{
 use std::sync::Arc;
 use tokio::{
     signal::unix::{SignalKind, signal},
-    sync::RwLock,
+    sync::{RwLock, broadcast},
 };
 
 use axum::http::Method as AxumMethod;
 use reqwest::Method as ReqwestMethod;
 use std::str::FromStr;
 
-use crate::config::RouteConfig;
+use crate::{
+    config::{RouteConfig, loader::load_config},
+    subscribe::app_event::AppEvent,
+    utils::generate_auth_headers::generate_auth_headers,
+};
 
-#[tokio::main]
+#[derive(Clone)]
+pub struct AppState {
+    pub config: Arc<RwLock<config::GatewayConfig>>,
+    pub event_tx: broadcast::Sender<AppEvent>,
+}
+
+//#[tokio::main]
 async fn main() {
-    let shared_config = Arc::new(RwLock::new(load_config("config.yaml")));
-    println!("Config loaded: {:#?}", shared_config.read().await);
+    let appstate: AppState;
+
+    appstate.config = Arc::new(RwLock::new(load_config("config.yaml")));
+    println!("Config loaded: {:#?}", appstate.config.read().await);
+
+    let events_broadcast: broadcast::Sender<AppEvent>;
 
     let app = Router::new()
+        // .route("/subscribe", subscribe_handler)
         .fallback(handler)
-        .with_state(shared_config.clone());
+        .with_state(appstate);
 
-    let shared_config_clone = shared_config.clone();
+    let shared_config_clone = appstate.config.clone();
     tokio::spawn(async move {
         let mut sighup = signal(SignalKind::hangup()).unwrap();
         while sighup.recv().await.is_some() {
@@ -49,7 +64,7 @@ async fn main() {
         }
     });
 
-    let listener = tokio::net::TcpListener::bind(&shared_config.read().await.gateway.host)
+    let listener = tokio::net::TcpListener::bind(&appstate.config.read().await.gateway.host)
         .await
         .unwrap();
 
@@ -79,10 +94,10 @@ fn match_route(pattern: &str, path: &str) -> Option<Vec<(String, String)>> {
 }
 
 async fn handler(
-    State(config): State<Arc<RwLock<config::GatewayConfig>>>,
+    State(state): State<AppState>,
     req: Request,
 ) -> Result<Response<Body>, StatusCode> {
-    let cfg = config.read().await;
+    let cfg = state.config.read().await;
 
     let request_path = req.uri().path();
     let method: &AxumMethod = req.method();
@@ -106,102 +121,10 @@ async fn handler(
     let service_url: String = service_url.unwrap();
     let matched_route: RouteConfig = matched_route.unwrap();
 
-    let mut auth_reqwest_headers = HeaderMap::new();
-    if let Some(auth_header) = req.headers().get("Authorization") {
-        if let Ok(auth) = auth_header.to_str() {
-            if auth.starts_with("Basic ") {
-                if matched_route.special_allow_roles.is_none()
-                    || !matched_route
-                        .special_allow_roles
-                        .unwrap()
-                        .contains("server")
-                {
-                    return Ok(Response::builder().status(403).body(Body::empty()).unwrap());
-                }
-
-                if let Some(server_name) = utils::server_token_decoder::decode_server_token(
-                    &cfg.allowed_server_tokens,
-                    &auth[6..],
-                ) {
-                    auth_reqwest_headers.insert(
-                        HeaderName::from_static("eauth-type"),
-                        HeaderValue::from_static("server"),
-                    );
-                    auth_reqwest_headers.insert(
-                        HeaderName::from_static("eauth-server-name"),
-                        HeaderValue::from_str(&server_name).unwrap(),
-                    );
-                } else {
-                    return Ok(Response::builder().status(401).body(Body::empty()).unwrap());
-                }
-            } else if auth.starts_with("Bearer ") {
-                let user_token_uuid = {
-                    match utils::user_token_decoder::decode_user_token(&auth[7..]) {
-                        Ok(token) => Some(token.uuid),
-                        Err(err) => {
-                            println!("{:#?}", err);
-                            None
-                        }
-                    }
-                };
-
-                if let Some(uuid) = user_token_uuid {
-                    auth_reqwest_headers.insert(
-                        HeaderName::from_static("eauth-type"),
-                        HeaderValue::from_static("user"),
-                    );
-                    auth_reqwest_headers.insert(
-                        HeaderName::from_static("eauth-user-id"),
-                        HeaderValue::from_str(&uuid).unwrap(),
-                    );
-                    let roles = utils::user_token_decoder::get_user_roles(
-                        &cfg.services["svc-users"].base_url,
-                        &uuid,
-                    )
-                    .await
-                    .unwrap();
-
-                    auth_reqwest_headers.insert(
-                        HeaderName::from_static("eauth-user-roles"),
-                        HeaderValue::from_str(&roles.join(",")).unwrap(),
-                    );
-
-                    if let Some(allow_roles) = &matched_route.allow_roles {
-                        let mut has_access: bool = false;
-                        for role in roles {
-                            if allow_roles.contains(&role) {
-                                has_access = true;
-                                break;
-                            }
-                        }
-
-                        if !has_access {
-                            return Ok(Response::builder()
-                                .status(403)
-                                .body(Body::empty())
-                                .unwrap());
-                        }
-                    }
-                } else {
-                    return Ok(Response::builder().status(422).body(Body::empty()).unwrap());
-                }
-            } else {
-                return Ok(Response::builder().status(422).body(Body::empty()).unwrap());
-            }
-        } else {
-            return Ok(Response::builder().status(422).body(Body::empty()).unwrap());
-        }
-    } else {
-        if matched_route.allow_roles.is_some() || matched_route.special_allow_roles.is_some() {
-            return Ok(Response::builder().status(401).body(Body::empty()).unwrap());
-        }
-
-        auth_reqwest_headers.insert(
-            HeaderName::from_static("eauth-type"),
-            HeaderValue::from_static("guest"),
-        );
-    }
-    let auth_reqwest_headers = auth_reqwest_headers;
+    let auth_reqwest_headers = match generate_auth_headers(&req, &matched_route, &cfg).await {
+        Err(err) => return Ok(err),
+        Ok(result) => result,
+    };
 
     let service_url = format!("{}{}", service_url, req.uri().path_and_query().unwrap());
 

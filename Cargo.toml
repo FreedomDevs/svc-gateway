@@ -16,4 +16,5 @@ hex = "0.4"
 sha2 = "0.10.9"
 base64 = "0.22.1"
 axum = { version = "0.8.8", features = ["macros"] }
+futures = "0.3.32"
 
