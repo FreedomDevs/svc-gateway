@@ -1,0 +1,12 @@
+{
+  "jwt_secret": "super-minus-rust-secret-key-123",
+  "roles_permissions": {
+    "admin": ["read", "write", "delete"],
+    "user": ["read", "write"],
+    "guest": ["read"]
+  },
+  "microservices": {
+    "auth": "http://127.0.0.1:8081",
+    "billing": "http://127.0.0.1:8082"
+  }
+}
