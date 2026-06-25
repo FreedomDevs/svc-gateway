@@ -1,0 +1,9 @@
+{
+    "workspace.library": [
+        "/run/current-system/sw/share/lua/5.1"
+    ],
+    "diagnostics.globals": [
+        "ngx",
+        "ndk"
+    ]
+}
