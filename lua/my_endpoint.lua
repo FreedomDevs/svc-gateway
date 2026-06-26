@@ -13,6 +13,11 @@ local auth_header = headers["Authorization"]
 
 local config = cjson.decode(config_json)
 
+local function ensure_array(val)
+  if val == nil then return {} end
+  return type(val) == "table" and val or { val }
+end
+
 local auth_type = "guest"
 local server_name = ""
 local user_id = ""

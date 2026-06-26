@@ -28,14 +28,23 @@ if not config_json then
 end
 
 -- Проверяем, что JSON валидный (опционально)
-local status, config_table = pcall(cjson.decode, config_json)
+local status, config = pcall(cjson.decode, config_json)
 if not status then
   ngx.log(ngx.ERR, "ЗАВЕРШЕНИЕ: Ошибка в синтаксисе config.jsonc")
   os.exit(1)
 end
 
+cjson.encode_escape_forward_slash(false)
+
 -- Сохраняем строку в нашу разделяемую память Nginx
 local cache = ngx.shared.app
-cache:set("config", config_json)
+local minified = cjson.encode(config)
+ngx.log(ngx.WARN, minified)
+
+local success, err = cache:safe_set("config", minified)
+
+if not success then
+  ngx.log(ngx.ERR, "Критическая ошибка: не удалось записать конфиг в память: ", err)
+end
 
 ngx.log(ngx.WARN, "🚀 Конфигурация сервиса успешно загружена в память Nginx!")

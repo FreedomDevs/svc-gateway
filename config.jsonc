@@ -1,19 +1,103 @@
 {
   "jwt_public_key": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAF9UP119hzNLdQUmOO30dpsJ8MmxImGhf2RkzRoHXIQg=\n-----END PUBLIC KEY-----",
   "services": {
-    "svc_users": {
-      "base_url": "http://localhost:8088",
+    "svc-users": {
+      "base_url": "https://elysium-svc-users.mcbeeland.ru",
       "routes": [
         {
           "path": "/users",
           "method": "GET",
-          "allow_roles": ["admin", "manager", "user"]
-          "special_allow_roles": ["server"]
+          "required_roles": "search"
+        },
+        {
+          "path": "/users/:idOrName",
+          "method": "GET",
+          "required_roles": "read"
+        },
+        {
+          "path": "/users",
+          "method": "POST",
+          "required_roles": "create"
+        },
+        {
+          "path": "/users/:idOrName",
+          "method": "DELETE",
+          "required_roles": "delete"
+        }, // Тут ещё должны быть endpoint-ы для редактирования ролей
+        {
+          "path": "/groups",
+          "method": "GET",
+          "required_roles": "groups_list"
+        },
+        {
+          "path": "/groups",
+          "method": "POST",
+          "required_roles": "groups_create"
+        },
+        {
+          "path": "/groups/:idOrName",
+          "method": "DELETE",
+          "required_roles": "groups_delete"
+        } // Тут ещё должны быть endpoint-ы для редактирования групп
+      ]
+    },
+    "svc-dox": {
+      "base_url": "https://elysium-svc-dox.mcbeeland.ru",
+      "routes": [
+        {
+          "path": "/dox/ip",
+          "method": "GET",
+          "required_roles": "ip"
         }
+      ]
+    },
+    "svc-auth": {
+      "base_url": "https://elysium-svc-auth.mcbeeland.ru",
+      "routes": [
+        {
+          "path": "/auth/register",
+          "method": "POST",
+          "required_roles": false
+        },
+        {
+          "path": "/auth/alt/register",
+          "method": "POST",
+          "required_roles": false
+        },
+        {
+          "path": "/auth/login",
+          "method": "POST",
+          "required_roles": false
+        },
+        {
+          "path": "/auth/alt/login",
+          "method": "POST",
+          "required_roles": false
+        },
+        {
+          "path": "/auth/refresh",
+          "method": "POST",
+          "required_roles": false
+        },
+        {
+          "path": "/auth/pop_game_token",
+          "method": "POST",
+          "required_roles": "pop_game_token"
+        },
+        {
+          "path": "/auth/check_refresh_token",
+          "method": "POST",
+          "required_roles": "pop_game_token"
+        },
       ]
     }
   },
+  "server_token_groups": {
+    "default": {
+      "svc-users":["search","read","read_password"]
+    }
+  },
   "allowed_server_tokens": {
-    "843046b669e70d2d8ceaf478cce70a0199671b83a8f065d5b6245a985a81a958": {} // Токен: ZWx5c2l1bV9tYWluOufZVr6wXCptUoK8fq3vYlqmWRTar/NtWRCJrp6U0iDS
+    "843046b669e70d2d8ceaf478cce70a0199671b83a8f065d5b6245a985a81a958": {"groups": "default"} // Токен: ZWx5c2l1bV9tYWluOufZVr6wXCptUoK8fq3vYlqmWRTar/NtWRCJrp6U0iDS
   }
 }
