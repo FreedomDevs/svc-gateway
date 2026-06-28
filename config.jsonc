@@ -2,7 +2,7 @@
   "jwt_public_key": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAF9UP119hzNLdQUmOO30dpsJ8MmxImGhf2RkzRoHXIQg=\n-----END PUBLIC KEY-----",
   "services": {
     "svc-users": {
-      "base_url": "https://elysium-svc-users.mcbeeland.ru",
+      "base_routes": ["/users", "/groups"],
       "routes": [
         {
           "path": "/users",
@@ -42,7 +42,7 @@
       ]
     },
     "svc-dox": {
-      "base_url": "https://elysium-svc-dox.mcbeeland.ru",
+      "base_routes": ["/dox"],
       "routes": [
         {
           "path": "/dox/ip",
@@ -52,7 +52,7 @@
       ]
     },
     "svc-auth": {
-      "base_url": "https://elysium-svc-auth.mcbeeland.ru",
+      "base_routes": ["/auth"],
       "routes": [
         {
           "path": "/auth/register",
@@ -88,7 +88,7 @@
           "path": "/auth/check_refresh_token",
           "method": "POST",
           "required_roles": "pop_game_token"
-        },
+        }
       ]
     }
   },

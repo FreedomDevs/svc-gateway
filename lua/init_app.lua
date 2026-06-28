@@ -30,7 +30,7 @@ end
 -- Проверяем, что JSON валидный (опционально)
 local status, config = pcall(cjson.decode, config_json)
 if not status then
-  ngx.log(ngx.ERR, "ЗАВЕРШЕНИЕ: Ошибка в синтаксисе config.jsonc")
+  ngx.log(ngx.ERR, "ЗАВЕРШЕНИЕ: Ошибка в синтаксисе config.jsonc, ", config)
   os.exit(1)
 end
 
@@ -39,7 +39,7 @@ cjson.encode_escape_forward_slash(false)
 -- Сохраняем строку в нашу разделяемую память Nginx
 local cache = ngx.shared.app
 local minified = cjson.encode(config)
-ngx.log(ngx.WARN, minified)
+-- ngx.log(ngx.WARN, minified)
 
 local success, err = cache:safe_set("config", minified)
 
