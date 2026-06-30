@@ -15,8 +15,10 @@ local config = cjson.decode(config_json)
 
 local auth_type = "guest"
 local server_name = ""
+local server_token = nil
 local user_id = ""
 local user_roles = ""
+local roles = nil
 
 if auth_header then
   if string.sub(auth_header, 1, 7) == "Bearer " then
@@ -34,7 +36,7 @@ if auth_header then
     auth_type = "user"
     user_id = user_token.uuid
 
-    local roles, err = user_service.get_user_roles(config["svc-users-host"], user_id)
+    roles, err = user_service.get_user_roles(config["svc-users-host"], user_id)
     if not roles then
       ngx.log(ngx.ERR, "Не удалось получить роли пользователя: ", err)
       ngx.status = 500
@@ -42,7 +44,7 @@ if auth_header then
       ngx.exit(500)
     end
 
-    user_roles = cjson.encode(roles)
+    user_roles = table.concat(roles, " ")
   elseif string.sub(auth_header, 1, 6) == "Basic " then
     local base64_str = string.sub(auth_header, 7)
 
@@ -51,8 +53,8 @@ if auth_header then
     local binary_hash = digest:final()
     local hex_hash = str.to_hex(binary_hash)
 
-    local token_info = config.allowed_server_tokens[hex_hash]
-    if not token_info then
+    server_token = config.allowed_server_tokens[hex_hash]
+    if not server_token then
       ngx.log(ngx.WARN, "Попытка входа с неизвестным хэшем: ", hex_hash)
       ngx.status = ngx.HTTP_FORBIDDEN
       ngx.say("Access denied: hash not found in config")
@@ -77,6 +79,84 @@ ngx.req.set_header("eauth-server-name", server_name)
 ngx.req.set_header("eauth-user-id", user_id)
 ngx.req.set_header("eauth-user-roles", user_roles)
 
--- Всё, пока мне лень писать дальше
-ngx.say("Test")
-ngx.exit(200)
+local function match_url(pattern, url)
+  -- 1. Экранируем ТОЛЬКО реальные спецсимволы регулярных выражений.
+  -- Порядок внутри [%...] важен, минус ставим в самый конец, чтобы он не означал диапазон.
+  local regex = pattern:gsub("([%.%+%*%?%^%$%(%)%[%]%{%}%|%\\])", "\\%1")
+
+  -- 2. Заменяем именованные параметры :id, :name на регулярку [^/]+
+  regex = regex:gsub(":[%a%d_]+", "[^/]+")
+
+  -- 3. Заменяем *path (wildcard в конце) на .+
+  regex = regex:gsub("\\%*[%a%d_]+", ".+")
+
+  -- 4. Добавляем якоря начала (^) и конца ($) строки
+  regex = "^" .. regex .. "$"
+
+  -- 5. Проверяем совпадение через быстрый ngx.re.match с JIT
+  local res, err = ngx.re.match(url, regex, "jo")
+
+  if err then
+    ngx.log(ngx.ERR, "Ошибка регулярного выражения: ", err)
+    return false
+  end
+
+  return res ~= nil
+end
+
+for service_name, service in pairs(config.services) do
+  for _, route in ipairs(service.routes) do
+    if route.method ~= ngx.var.request_method then goto continue end
+    if not match_url(route.path, ngx.var.uri) then goto continue end
+
+    if route.required_role == false then
+      ngx.var.backend = "http://" .. service_name .. "-backend"
+      goto break_all
+    end
+    if auth_type == "guest" then
+      ngx.exit(403)
+    end
+
+    local required_role = route.required_role
+    if auth_type == "user" then
+      for _, role in ipairs(roles) do
+        if role == required_role then
+          ngx.var.backend = "http://" .. service_name .. "-backend"
+          goto break_all
+        end
+      end
+
+      ngx.exit(403)
+    end
+
+    if auth_type == "server" then
+      local groups = server_token.groups
+      if type(groups) == "string" then
+        groups = { groups }
+      end
+
+      for _, group in ipairs(groups) do
+        local group_data = config.server_token_groups[group]
+
+        if group_data and group_data[service_name] then
+          local roles = group_data[service_name]
+
+          for _, role in ipairs(roles) do
+            if role == required_role then
+              ngx.var.backend = "http://" .. service_name .. "-backend"
+              goto break_all
+            end
+          end
+        end
+      end
+
+      ngx.exit(403)
+    end
+
+    ::continue::
+  end
+end
+
+ngx.exit(404)
+
+::break_all::

@@ -12,33 +12,43 @@
         {
           "path": "/users/:idOrName",
           "method": "GET",
-          "required_roles": "read"
+          "required_role": "read"
+        },
+        {
+          "path": "/users/me",
+          "method": "GET",
+          "required_role": "read_self"
         },
         {
           "path": "/users",
           "method": "POST",
-          "required_roles": "create"
+          "required_role": "create"
         },
         {
           "path": "/users/:idOrName",
           "method": "DELETE",
-          "required_roles": "delete"
-        }, // Тут ещё должны быть endpoint-ы для редактирования ролей
+          "required_role": "delete"
+        },
+        {
+          "path": "/users/:idOrName/permissions",
+          "method": "GET",
+          "required_roles": "read"
+        },
         {
           "path": "/groups",
           "method": "GET",
-          "required_roles": "groups_list"
+          "required_role": "groups_list"
         },
         {
           "path": "/groups",
           "method": "POST",
-          "required_roles": "groups_create"
+          "required_role": "groups_create"
         },
         {
           "path": "/groups/:idOrName",
           "method": "DELETE",
-          "required_roles": "groups_delete"
-        } // Тут ещё должны быть endpoint-ы для редактирования групп
+          "required_role": "groups_delete"
+        }
       ]
     },
     "svc-dox": {
@@ -47,7 +57,7 @@
         {
           "path": "/dox/ip",
           "method": "GET",
-          "required_roles": "ip"
+          "required_role": "ip"
         }
       ]
     },
@@ -57,37 +67,67 @@
         {
           "path": "/auth/register",
           "method": "POST",
-          "required_roles": false
+          "required_role": false
+        },
+        {
+          "path": "/auth/confirm_email",
+          "method": "POST",
+          "required_role": false
+        },
+        {
+          "path": "/auth/resend_email",
+          "method": "POST",
+          "required_role": false
         },
         {
           "path": "/auth/alt/register",
           "method": "POST",
-          "required_roles": false
+          "required_role": false
         },
         {
           "path": "/auth/login",
           "method": "POST",
-          "required_roles": false
+          "required_role": false
         },
         {
           "path": "/auth/alt/login",
           "method": "POST",
-          "required_roles": false
+          "required_role": false
         },
         {
           "path": "/auth/refresh",
           "method": "POST",
-          "required_roles": false
-        },
-        {
-          "path": "/auth/pop_game_token",
-          "method": "POST",
-          "required_roles": "pop_game_token"
+          "required_role": false
         },
         {
           "path": "/auth/check_refresh_token",
           "method": "POST",
-          "required_roles": "pop_game_token"
+          "required_role": false
+        },
+        {
+          "path": "/auth/pop_game_token",
+          "method": "POST",
+          "required_role": "pop_game_token"
+        }
+      ]
+    },
+    "svc-whitelist": {
+      "base_routes": ["/whitelist"],
+      "routes": [
+        {
+          "path": "/whitelist",
+          "method": "POST",
+          "required_role": "add"
+        },
+        {
+          "path": "/whitelist/check",
+          "method": "GET",
+          "required_role": "check"
+        },
+        {
+          "path": "/whitelist",
+          "method": "DELETE",
+          "required_role": "delete"
         }
       ]
     }
