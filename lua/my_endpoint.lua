@@ -114,7 +114,7 @@ for service_name, service in pairs(config.services) do
       goto break_all
     end
     if auth_type == "guest" then
-      ngx.exit(403)
+      ngx.exit(401)
     end
 
     local required_role = route.required_role
