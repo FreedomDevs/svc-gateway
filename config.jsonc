@@ -130,11 +130,28 @@
           "required_role": "delete"
         }
       ]
+    },
+    "svc-queue": {
+      "base_routes": ["/queue"],
+      "shrink_url": true,
+      "routes": [
+        {
+          "path": "/queue/:services",
+          "method": "GET",
+          "required_role": "subscribe"
+        },
+        {
+          "path": "/queue/:services",
+          "method": "POST",
+          "required_role": "publish"
+        }
+      ]
     }
   },
   "server_token_groups": {
     "default": {
-      "svc-users":["search","read","read_password"]
+      "svc-users":["search","read","read_password"],
+      "svc-queue":["subscribe"]
     }
   },
   "allowed_server_tokens": {

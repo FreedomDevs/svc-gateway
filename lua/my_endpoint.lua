@@ -104,13 +104,50 @@ local function match_url(pattern, url)
   return res ~= nil
 end
 
+local function starts_with(str, start)
+  return string.sub(str, 1, string.len(start)) == start
+end
+
+local function process_routing(service_name, service)
+  -- 1. Выставляем бэкенд
+  ngx.var.backend = "http://" .. service_name .. "-backend"
+
+  -- 2. Если нужно резать URL — занимаемся этим
+  if service.shrink_url == true and service.base_routes then
+    local current_uri = ngx.var.uri
+
+    -- Перебираем массив базовых роутов
+    for _, route in ipairs(service.base_routes) do
+      if starts_with(current_uri, route) then
+        -- Экранируем спецсимволы в роуте для безопасного regex
+        -- (например, если в роуте есть дефисы или точки)
+        local escaped_route = ngx.re.gsub(route, "([%-%\\^\\$\\.\\|\\?\\*\\+\\(\\)\\[\\]\\{\\}])", "\\$1")
+
+        -- Вырезаем префикс из начала строки
+        local new_uri = ngx.re.sub(current_uri, "^" .. escaped_route, "", "jo")
+
+        -- Если осталась пустая строка, делаем слэшем
+        if new_uri == "" then
+          new_uri = "/"
+        end
+
+        -- Применяем новый URI "на месте"
+        ngx.req.set_uri(new_uri, false)
+
+        -- Выходим из цикла, как только нашли первое совпадение
+        break
+      end
+    end
+  end
+end
+
 for service_name, service in pairs(config.services) do
   for _, route in ipairs(service.routes) do
     if route.method ~= ngx.var.request_method then goto continue end
     if not match_url(route.path, ngx.var.uri) then goto continue end
 
     if route.required_role == false then
-      ngx.var.backend = "http://" .. service_name .. "-backend"
+      process_routing(service_name, service)
       goto break_all
     end
     if auth_type == "guest" then
@@ -121,7 +158,7 @@ for service_name, service in pairs(config.services) do
     if auth_type == "user" then
       for _, role in ipairs(roles) do
         if role == required_role then
-          ngx.var.backend = "http://" .. service_name .. "-backend"
+          process_routing(service_name, service)
           goto break_all
         end
       end
@@ -143,7 +180,7 @@ for service_name, service in pairs(config.services) do
 
           for _, role in ipairs(roles) do
             if role == required_role then
-              ngx.var.backend = "http://" .. service_name .. "-backend"
+              process_routing(service_name, service)
               goto break_all
             end
           end
