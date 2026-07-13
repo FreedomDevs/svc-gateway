@@ -64,8 +64,14 @@
     "svc-auth": {
       "base_routes": ["/auth"],
       "routes": [
+        // Регистрация и вход в аккаунт
         {
           "path": "/auth/register",
+          "method": "POST",
+          "required_role": false
+        },
+        {
+          "path": "/auth/login",
           "method": "POST",
           "required_role": false
         },
@@ -79,13 +85,9 @@
           "method": "POST",
           "required_role": false
         },
+        // Alt регистрация и логин
         {
           "path": "/auth/alt/register",
-          "method": "POST",
-          "required_role": false
-        },
-        {
-          "path": "/auth/login",
           "method": "POST",
           "required_role": false
         },
@@ -94,6 +96,7 @@
           "method": "POST",
           "required_role": false
         },
+        // Работа с токенами
         {
           "path": "/auth/refresh",
           "method": "POST",
@@ -105,9 +108,36 @@
           "required_role": false
         },
         {
+          "path": "/auth/create_child_token",
+          "method": "POST",
+          "required_role": false
+        },
+        // Штуки для серверов
+        {
           "path": "/auth/pop_game_token",
           "method": "POST",
           "required_role": "pop_game_token"
+        },
+        // Работа с client_id
+        {
+          "path": "/auth/client_info",
+          "method": "PUT",
+          "required_role": "edit_client_info"
+        },
+        {
+          "path": "/auth/client_info/:client_id",
+          "method": "DELETE",
+          "required_role": "edit_client_info"
+        },
+        {
+          "path": "/auth/client_info/:client_id",
+          "method": "GET",
+          "required_role": false
+        },
+        {
+          "path": "/auth/client_info",
+          "method": "GET",
+          "required_role": false
         }
       ]
     },
