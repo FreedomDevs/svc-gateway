@@ -1,5 +1,4 @@
-# shell.nix
-{pkgs ? import <nixpkgs> {}}: let
+{pkgs}: let
   lua-resty-websocket = pkgs.luajitPackages.callPackage (
     {
       buildLuarocksPackage,
@@ -27,13 +26,30 @@
         disabled = luaOlder "5.1";
       }
   ) {};
-in
-  pkgs.mkShell {
-    buildInputs = [
-      pkgs.openresty
+
+  luaEnv = pkgs.luajitPackages.buildEnv {
+    name = "svc-gateway-lua-env";
+
+    paths = [
       pkgs.luajitPackages.lua-resty-jwt
       pkgs.luajitPackages.lua-resty-http
+      pkgs.luajitPackages.cjson
       lua-resty-websocket
-      pkgs.openssl
     ];
+  };
+in
+  pkgs.stdenv.mkDerivation {
+    pname = "svc-gateway";
+    version = "1.0";
+
+    src = ./lua;
+
+    installPhase = ''
+      mkdir -p $out
+      cp -r . $out/
+    '';
+
+    passthru = {
+      luaEnv = luaEnv;
+    };
   }
