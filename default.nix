@@ -26,17 +26,6 @@
         disabled = luaOlder "5.1";
       }
   ) {};
-
-  luaEnv = pkgs.luajitPackages.buildEnv {
-    name = "svc-gateway-lua-env";
-
-    paths = [
-      pkgs.luajitPackages.lua-resty-jwt
-      pkgs.luajitPackages.lua-resty-http
-      pkgs.luajitPackages.cjson
-      lua-resty-websocket
-    ];
-  };
 in
   pkgs.stdenv.mkDerivation {
     pname = "svc-gateway";
@@ -50,6 +39,11 @@ in
     '';
 
     passthru = {
-      luaEnv = luaEnv;
+      luaDependencies = [
+        lua-resty-websocket
+        pkgs.luajitPackages.lua-resty-jwt
+        pkgs.luajitPackages.lua-resty-http
+        pkgs.luajitPackages.cjson
+      ];
     };
   }
