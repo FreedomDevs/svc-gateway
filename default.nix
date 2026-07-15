@@ -39,13 +39,6 @@ in
     '';
 
     passthru = {
-      luaDependencies = [
-        lua-resty-websocket
-        pkgs.luajitPackages.lua-resty-jwt
-        pkgs.luajitPackages.lua-resty-http
-        pkgs.luajitPackages.lua-resty-core
-        pkgs.luajitPackages.lua-resty-openssl
-        pkgs.luajitPackages.cjson
-      ];
+      luaDependencies = "${lua-resty-websocket}/share/lua/5.1/?.lua;${pkgs.luajitPackages.lua-resty-jwt}/share/lua/5.1/?.lua;${pkgs.luajitPackages.lua-resty-http}/share/lua/5.1/?.lua;${pkgs.luajitPackages.lua-resty-core}/lib/lua/5.1/?.lua;${pkgs.luajitPackages.lua-resty-openssl}/share/lua/5.1/?.lua;${pkgs.luajitPackages.cjson}/share/lua/5.1/?.lua";
     };
   }
