@@ -43,6 +43,8 @@ in
         lua-resty-websocket
         pkgs.luajitPackages.lua-resty-jwt
         pkgs.luajitPackages.lua-resty-http
+        pkgs.luajitPackages.lua-resty-core
+        pkgs.luajitPackages.lua-resty-openssl
         pkgs.luajitPackages.cjson
       ];
     };
