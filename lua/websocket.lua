@@ -3,7 +3,7 @@ local websocket = require "resty.websocket.server"
 local ffi = require "ffi"
 
 local wb, err = websocket:new {
-  timeout = 60000,
+  timeout = 60000 * 2,
   max_payload_len = 16 * 1024 * 1024
 }
 
@@ -22,7 +22,7 @@ end
 
 
 local backend = ngx.socket.tcp()
-backend:settimeouts(60000, 60000, 60000)
+backend:settimeouts(60000 * 2, 60000 * 2, 60000 * 2)
 
 
 local ok, err
@@ -77,6 +77,7 @@ local function ws_reader()
     end
 
     if typ == "close" then
+      backend:close()
       break
     end
 
@@ -164,8 +165,16 @@ local t1 = ngx.thread.spawn(ws_reader)
 local t2 = ngx.thread.spawn(backend_reader)
 
 
-ngx.thread.wait(t1, t2)
+local ok, thread = ngx.thread.wait(t1, t2)
+
+if thread == t1 then
+  ngx.thread.kill(t2)
+else
+  ngx.thread.kill(t1)
+end
 
 
 backend:close()
-wb:send_close()
+wb:send_close(1000, "Normal closure")
+
+ngx.exit(ngx.OK)

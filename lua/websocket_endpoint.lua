@@ -46,6 +46,6 @@ end
 ]]
 
 
-ngx.var.backend = "tcp://127.0.0.1:8088"
+ngx.var.backend = "tcp://127.0.0.1:8085"
 
 ::break_all::
