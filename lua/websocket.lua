@@ -54,15 +54,15 @@ if not ok then
 end
 
 
-local function pack_u64_le(n)
-  local buf = ffi.new("uint64_t[1]", n)
-  return ffi.string(buf, 8)
+local function pack_u32_le(n)
+  local buf = ffi.new("uint32_t[1]", n)
+  return ffi.string(buf, 4)
 end
 
 
-local function unpack_u64_le(str)
-  local buf = ffi.new("uint64_t[1]")
-  ffi.copy(buf, str, 8)
+local function unpack_u32_le(str)
+  local buf = ffi.new("uint32_t[1]")
+  ffi.copy(buf, str, 4)
   return tonumber(buf[0])
 end
 
@@ -85,23 +85,27 @@ local function ws_reader()
       goto continue
     end
 
-    if typ ~= "text" and typ ~= "binary" then
+    if typ == "text" then
+      ngx.log(ngx.ERR, "unexpected text frame from client, expected binary")
+      break
+    end
+
+    if typ ~= "binary" then
       goto continue
     end
 
-    if #data < 8 then
+    if #data < 4 then
       ngx.log(ngx.ERR, "invalid message")
       break
     end
 
 
-    -- первые 8 байт payload = type
-    local msg_type = data:sub(1, 8)
-
+    local msg_type = data:sub(1, 4)
+    local payload = data:sub(5)
     local packet =
         msg_type ..
-        pack_u64_le(#data) ..
-        data
+        pack_u32_le(#payload) ..
+        payload
 
 
     local ok, err = backend:send(packet)
@@ -120,24 +124,18 @@ end
 local function backend_reader()
   while true do
     -- type
-    local type_raw, err = backend:receive(8)
-
+    local type_raw, err = backend:receive(4)
     if not type_raw then
       break
     end
 
-
     -- length
-    local len_raw, err = backend:receive(8)
-
+    local len_raw, err = backend:receive(4)
     if not len_raw then
       break
     end
 
-
-    local len = unpack_u64_le(len_raw)
-
-
+    local len = unpack_u32_le(len_raw)
     if len > 16 * 1024 * 1024 then
       ngx.log(ngx.ERR, "message too large")
       break
@@ -145,19 +143,14 @@ local function backend_reader()
 
 
     local data, err = backend:receive(len)
-
     if not data then
       break
     end
 
-
-    -- type можно использовать при необходимости
-    local typ = type_raw
-
+    local full_packet = type_raw .. data
 
     -- отправляем клиенту
-    local ok, err = wb:send_binary(data)
-
+    local ok, err = wb:send_binary(full_packet)
     if not ok then
       ngx.log(ngx.ERR, "websocket send failed: ", err)
       break
