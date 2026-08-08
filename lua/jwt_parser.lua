@@ -5,7 +5,7 @@ local _M = {}
 
 function _M.parse_user_token(token_str)
   local cache = ngx.shared.app_config
-  local config = cjson.decode(cache:get("raw_config"))
+  local config = cjson.decode(cache:get("config"))
   local public_key = config.jwt_public_key
 
   if not public_key then

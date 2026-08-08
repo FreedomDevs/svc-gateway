@@ -176,6 +176,17 @@
           "required_role": "publish"
         }
       ]
+    },
+    "minecallback": {
+      "base_routes": ["/mine"],
+      "shrink_url": true,
+      "routes": [
+        {
+          "path": "/mine",
+          "method": "GET",
+          "required_role": false
+        }
+      ]
     }
   },
   "server_token_groups": {
