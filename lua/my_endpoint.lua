@@ -50,12 +50,12 @@ for i, val in pairs(config.services) do
     ::continue::
   end
 end
-local required_role = route.required_role
-
 
 if service_name == nil then
   ngx.exit(404)
 end
+
+local required_role = route.required_role
 
 local auth_type = "guest"
 local server_name = ""
