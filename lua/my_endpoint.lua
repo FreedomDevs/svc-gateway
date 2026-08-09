@@ -3,7 +3,7 @@ local cjson = require "cjson"
 local jwt_parser = require "jwt_parser"
 local user_service = require("user_service")
 local sha256 = require "resty.sha256"
-local string = require "resty.string"
+local strings = require "resty.string"
 
 local cache = ngx.shared.app
 local config_json = cache:get("config")
@@ -41,7 +41,7 @@ end
 local service_name, route, service
 for i, val in pairs(config.services) do
   for _, r in ipairs(val.routes) do
-    if route.method ~= ngx.var.request_method then goto continue end
+    if r.method ~= ngx.var.request_method then goto continue end
     if not match_url(r.path, ngx.var.uri) then goto continue end
 
     service_name = i
@@ -71,7 +71,7 @@ if auth_header then
     local user_token, err = jwt_parser.parse_user_token(token)
 
     if not user_token then
-      ngx.log(ngx.WARN, "JWT Auth block failed: ", err)
+      -- ngx.log(ngx.WARN, "JWT Auth block failed: ", err)
       ngx.status = ngx.HTTP_UNAUTHORIZED
       ngx.say("Unauthorized: ", err)
       ngx.exit(ngx.HTTP_UNAUTHORIZED)
@@ -80,7 +80,7 @@ if auth_header then
     auth_type = "user"
     user_id = user_token.uuid
 
-    roles, err = user_service.get_user_roles(config["svc-users-host"], user_id, server_name)
+    roles, err = user_service.get_user_roles(config["svc-users-host"], user_id, service_name)
     if not roles then
       ngx.log(ngx.ERR, "Не удалось получить роли пользователя: ", err)
       ngx.status = 500
@@ -95,7 +95,7 @@ if auth_header then
     local digest = sha256:new()
     digest:update(base64_str)
     local binary_hash = digest:final()
-    local hex_hash = string.to_hex(binary_hash)
+    local hex_hash = strings.to_hex(binary_hash)
 
     server_token = config.allowed_server_tokens[hex_hash]
     if not server_token then
