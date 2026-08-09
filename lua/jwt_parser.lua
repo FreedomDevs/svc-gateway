@@ -4,7 +4,7 @@ local cjson = require("cjson")
 local _M = {}
 
 function _M.parse_user_token(token_str)
-  local cache = ngx.shared.app_config
+  local cache = ngx.shared.app
   local config = cjson.decode(cache:get("config"))
   local public_key = config.jwt_public_key
 

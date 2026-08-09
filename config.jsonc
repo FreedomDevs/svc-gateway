@@ -1,5 +1,6 @@
 {
   "jwt_public_key": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAF9UP119hzNLdQUmOO30dpsJ8MmxImGhf2RkzRoHXIQg=\n-----END PUBLIC KEY-----",
+  "svc-users-host": "http://[fd42:63f2:ba8d:6df6:1::3]",
   "services": {
     "svc-users": {
       "base_routes": ["/users", "/groups"],

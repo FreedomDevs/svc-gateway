@@ -3,7 +3,7 @@ local cjson = require "cjson"
 local jwt_parser = require "jwt_parser"
 local user_service = require("user_service")
 local sha256 = require "resty.sha256"
-local str = require "resty.string"
+local string = require "resty.string"
 
 local cache = ngx.shared.app
 local config_json = cache:get("config")
@@ -12,72 +12,6 @@ local headers = ngx.req.get_headers()
 local auth_header = headers["Authorization"]
 
 local config = cjson.decode(config_json)
-
-local auth_type = "guest"
-local server_name = ""
-local server_token = nil
-local user_id = ""
-local user_roles = ""
-local roles = nil
-
-if auth_header then
-  if string.sub(auth_header, 1, 7) == "Bearer " then
-    local token = string.sub(auth_header, 8)
-
-    local user_token, err = jwt_parser.parse_user_token(token)
-
-    if not user_token then
-      ngx.log(ngx.WARN, "JWT Auth block failed: ", err)
-      ngx.status = ngx.HTTP_UNAUTHORIZED
-      ngx.say("Unauthorized: ", err)
-      ngx.exit(ngx.HTTP_UNAUTHORIZED)
-    end
-
-    auth_type = "user"
-    user_id = user_token.uuid
-
-    roles, err = user_service.get_user_roles(config["svc-users-host"], user_id)
-    if not roles then
-      ngx.log(ngx.ERR, "Не удалось получить роли пользователя: ", err)
-      ngx.status = 500
-      ngx.say("Internal Server Error")
-      ngx.exit(500)
-    end
-
-    user_roles = table.concat(roles, " ")
-  elseif string.sub(auth_header, 1, 6) == "Basic " then
-    local base64_str = string.sub(auth_header, 7)
-
-    local digest = sha256:new()
-    digest:update(base64_str)
-    local binary_hash = digest:final()
-    local hex_hash = str.to_hex(binary_hash)
-
-    server_token = config.allowed_server_tokens[hex_hash]
-    if not server_token then
-      ngx.log(ngx.WARN, "Попытка входа с неизвестным хэшем: ", hex_hash)
-      ngx.status = ngx.HTTP_FORBIDDEN
-      ngx.say("Access denied: hash not found in config")
-      ngx.exit(ngx.HTTP_FORBIDDEN)
-    end
-
-    local decoded, err = ngx.decode_base64(base64_str)
-    if not decoded then
-      ngx.log(ngx.ERR, "Failed to decode base64: ", err)
-      ngx.exit(400)
-    end
-
-    local colon_pos = string.find(decoded, ":")
-
-    auth_type = "server"
-    server_name = string.sub(decoded, 1, colon_pos - 1)
-  end
-end
-
-ngx.req.set_header("eauth-type", auth_type)
-ngx.req.set_header("eauth-server-name", server_name)
-ngx.req.set_header("eauth-user-id", user_id)
-ngx.req.set_header("eauth-user-roles", user_roles)
 
 local function match_url(pattern, url)
   -- 1. Экранируем ТОЛЬКО реальные спецсимволы регулярных выражений.
@@ -104,11 +38,95 @@ local function match_url(pattern, url)
   return res ~= nil
 end
 
+local service_name, route, service
+for i, val in pairs(config.services) do
+  for _, r in ipairs(val.routes) do
+    if route.method ~= ngx.var.request_method then goto continue end
+    if not match_url(r.path, ngx.var.uri) then goto continue end
+
+    service_name = i
+    route = r
+    service = val
+    ::continue::
+  end
+end
+local required_role = route.required_role
+
+
+if service_name == nil then
+  ngx.exit(404)
+end
+
+local auth_type = "guest"
+local server_name = ""
+local server_token = nil
+local user_id = ""
+local user_roles = ""
+local roles = nil
+
+if auth_header then
+  if string.sub(auth_header, 1, 7) == "Bearer " then
+    local token = string.sub(auth_header, 8)
+
+    local user_token, err = jwt_parser.parse_user_token(token)
+
+    if not user_token then
+      ngx.log(ngx.WARN, "JWT Auth block failed: ", err)
+      ngx.status = ngx.HTTP_UNAUTHORIZED
+      ngx.say("Unauthorized: ", err)
+      ngx.exit(ngx.HTTP_UNAUTHORIZED)
+    end
+
+    auth_type = "user"
+    user_id = user_token.uuid
+
+    roles, err = user_service.get_user_roles(config["svc-users-host"], user_id, server_name)
+    if not roles then
+      ngx.log(ngx.ERR, "Не удалось получить роли пользователя: ", err)
+      ngx.status = 500
+      ngx.say("Internal Server Error")
+      ngx.exit(500)
+    end
+
+    user_roles = table.concat(roles, " ")
+  elseif string.sub(auth_header, 1, 6) == "Basic " then
+    local base64_str = string.sub(auth_header, 7)
+
+    local digest = sha256:new()
+    digest:update(base64_str)
+    local binary_hash = digest:final()
+    local hex_hash = string.to_hex(binary_hash)
+
+    server_token = config.allowed_server_tokens[hex_hash]
+    if not server_token then
+      ngx.log(ngx.WARN, "Попытка входа с неизвестным хэшем: ", hex_hash)
+      ngx.status = ngx.HTTP_FORBIDDEN
+      ngx.say("Access denied: hash not found in config")
+      ngx.exit(ngx.HTTP_FORBIDDEN)
+    end
+
+    local decoded, err = ngx.decode_base64(base64_str)
+    if not decoded then
+      ngx.log(ngx.ERR, "Failed to decode base64: ", err)
+      ngx.exit(400)
+    end
+
+    local colon_pos = string.find(decoded, ":")
+
+    auth_type = "server"
+    server_name = string.sub(decoded, 1, colon_pos - 1)
+  end
+end
+
+ngx.req.set_header("eauth-type", auth_type)
+ngx.req.set_header("eauth-server-name", server_name)
+ngx.req.set_header("eauth-user-id", user_id)
+ngx.req.set_header("eauth-user-roles", user_roles)
 local function starts_with(str, start)
   return string.sub(str, 1, string.len(start)) == start
 end
 
-local function process_routing(service_name, service)
+local function process_routing()
   -- 1. Выставляем бэкенд
   ngx.var.backend = "http://" .. service_name .. "-backend"
 
@@ -141,59 +159,48 @@ local function process_routing(service_name, service)
   end
 end
 
-for service_name, service in pairs(config.services) do
-  for _, route in ipairs(service.routes) do
-    if route.method ~= ngx.var.request_method then goto continue end
-    if not match_url(route.path, ngx.var.uri) then goto continue end
 
-    if route.required_role == false then
-      process_routing(service_name, service)
-      goto break_all
-    end
-    if auth_type == "guest" then
-      ngx.exit(401)
-    end
-
-    local required_role = route.required_role
-    if auth_type == "user" then
-      for _, role in ipairs(roles) do
-        if role == required_role then
-          process_routing(service_name, service)
-          goto break_all
-        end
-      end
-
-      ngx.exit(403)
-    end
-
-    if auth_type == "server" then
-      local groups = server_token.groups
-      if type(groups) == "string" then
-        groups = { groups }
-      end
-
-      for _, group in ipairs(groups) do
-        local group_data = config.server_token_groups[group]
-
-        if group_data and group_data[service_name] then
-          local roles = group_data[service_name]
-
-          for _, role in ipairs(roles) do
-            if role == required_role then
-              process_routing(service_name, service)
-              goto break_all
-            end
-          end
-        end
-      end
-
-      ngx.exit(403)
-    end
-
-    ::continue::
-  end
+if route.required_role == false then
+  goto accept
+end
+if auth_type == "guest" then
+  ngx.exit(401)
 end
 
-ngx.exit(404)
+if auth_type == "user" then
+  for _, role in ipairs(roles) do
+    if role == required_role then
+      goto accept
+    end
+  end
 
-::break_all::
+  ngx.exit(403)
+end
+
+if auth_type == "server" then
+  local groups = server_token.groups
+  if type(groups) == "string" then
+    groups = { groups }
+  end
+
+  for _, group in ipairs(groups) do
+    local group_data = config.server_token_groups[group]
+
+    if group_data and group_data[service_name] then
+      local roles = group_data[service_name]
+
+      for _, role in ipairs(roles) do
+        if role == required_role then
+          goto accept
+        end
+      end
+    end
+  end
+
+  ngx.exit(403)
+end
+
+ngx.exit(500)
+
+::accept::
+process_routing()

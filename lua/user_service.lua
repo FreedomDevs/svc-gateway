@@ -3,10 +3,10 @@ local cjson = require("cjson")
 
 local _M = {}
 
-function _M.get_user_roles(host, uuid)
+function _M.get_user_roles(host, uuid, servicename)
   local httpc = http.new()
 
-  local full_url = string.format("%s/users/%s", host, uuid)
+  local full_url = string.format("%s/users/%s/permissions?servicename=%s", host, uuid, servicename)
 
   local req_headers = {
     ["Accept"] = "application/json",
