@@ -1,5 +1,5 @@
 {
-  "jwt_public_key": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAF9UP119hzNLdQUmOO30dpsJ8MmxImGhf2RkzRoHXIQg=\n-----END PUBLIC KEY-----",
+  "jwt_public_key": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAAii6Q5OxBJD2B5qCnqe1pFugQqVpv6rNQnqvSasJKbQ=\n-----END PUBLIC KEY-----",
   "svc-users-host": "http://[fd42:63f2:ba8d:6df6:1::3]",
   "services": {
     "svc-users": {
@@ -44,6 +44,11 @@
           "path": "/groups",
           "method": "POST",
           "required_role": "groups_create"
+        },
+        {
+          "path": "/groups/:idOrName/permissions",
+          "method": "PUT",
+          "required_role": "groups_edit"
         },
         {
           "path": "/groups/:idOrName",
