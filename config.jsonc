@@ -33,22 +33,22 @@
         {
           "path": "/users/:idOrName/permissions",
           "method": "GET",
-          "required_roles": "read"
+          "required_role": "read"
         },
         {
           "path": "/users/:idOrName/permissions",
           "method": "PUT",
-          "required_roles": "edit"
+          "required_role": "edit"
         },
         {
           "path": "/users/:idOrName/name",
           "method": "PUT",
-          "required_roles": "edit"
+          "required_role": "edit"
         },
         {
           "path": "/users/:idOrName/password",
           "method": "PUT",
-          "required_roles": "edit"
+          "required_role": "edit"
         },
         {
           "path": "/groups",
