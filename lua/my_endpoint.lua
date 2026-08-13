@@ -56,6 +56,10 @@ if service_name == nil then
 end
 
 local required_role = route.required_role
+if required_role == nil then
+  ngx.say("ERROR: required_role is nil")
+  ngx.exit(500)
+end
 
 local auth_type = "guest"
 local server_name = ""

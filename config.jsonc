@@ -8,7 +8,7 @@
         {
           "path": "/users",
           "method": "GET",
-          "required_roles": "search"
+          "required_role": "search"
         },
         {
           "path": "/users/:idOrName",
