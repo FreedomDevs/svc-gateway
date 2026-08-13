@@ -36,6 +36,21 @@
           "required_roles": "read"
         },
         {
+          "path": "/users/:idOrName/permissions",
+          "method": "PUT",
+          "required_roles": "edit"
+        },
+        {
+          "path": "/users/:idOrName/name",
+          "method": "PUT",
+          "required_roles": "edit"
+        },
+        {
+          "path": "/users/:idOrName/password",
+          "method": "PUT",
+          "required_roles": "edit"
+        },
+        {
           "path": "/groups",
           "method": "GET",
           "required_role": "groups_list"
