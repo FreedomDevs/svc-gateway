@@ -145,8 +145,8 @@
         },
         {
           "path": "/auth/get_my_integrations",
-          "method": "POST",
-          "required_role": false
+          "method": "GET",
+          "required_role": "read_self"
         },
         {
           "path": "/auth/create_child_token",
