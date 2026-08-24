@@ -11,14 +11,24 @@
           "required_role": "search"
         },
         {
-          "path": "/users/:idOrName",
-          "method": "GET",
-          "required_role": "read"
-        },
-        {
           "path": "/users/me",
           "method": "GET",
           "required_role": "read_self"
+        },
+        {
+          "path": "/users/me/name",
+          "method": "GET",
+          "required_role": "read_self"
+        },
+        {
+          "path": "/users/me/name",
+          "method": "PUT",
+          "required_role": "edit_self"
+        },
+        {
+          "path": "/users/:idOrName",
+          "method": "GET",
+          "required_role": "read"
         },
         {
           "path": "/users",
@@ -39,6 +49,11 @@
           "path": "/users/:idOrName/permissions",
           "method": "PUT",
           "required_role": "edit"
+        },
+        {
+          "path": "/users/:idOrName/name",
+          "method": "GET",
+          "required_role": "read"
         },
         {
           "path": "/users/:idOrName/name",
