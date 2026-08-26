@@ -10,21 +10,7 @@
           "method": "GET",
           "required_role": "search"
         },
-        {
-          "path": "/users/me",
-          "method": "GET",
-          "required_role": "read_self"
-        },
-        {
-          "path": "/users/me/name",
-          "method": "GET",
-          "required_role": "read_self"
-        },
-        {
-          "path": "/users/me/name",
-          "method": "PUT",
-          "required_role": "edit_self"
-        },
+        
         {
           "path": "/users/:idOrName",
           "method": "GET",
@@ -64,6 +50,21 @@
           "path": "/users/:idOrName/password",
           "method": "PUT",
           "required_role": "edit"
+        },
+        {
+          "path": "/users/me",
+          "method": "GET",
+          "required_role": "read_self"
+        },
+        {
+          "path": "/users/me/name",
+          "method": "GET",
+          "required_role": "read_self"
+        },
+        {
+          "path": "/users/me/name",
+          "method": "PUT",
+          "required_role": "edit_self"
         },
         {
           "path": "/groups",
