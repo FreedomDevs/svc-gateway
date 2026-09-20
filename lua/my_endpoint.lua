@@ -13,6 +13,15 @@ local auth_header = headers["Authorization"]
 
 local config = cjson.decode(config_json)
 
+local cors_origin = ngx.var.cors_origin
+if cors_origin and cors_origin ~= "" then
+  ngx.header["Access-Control-Allow-Origin"] = cors_origin
+  ngx.header["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS, PUT, DELETE, PATCH"
+  ngx.header["Access-Control-Allow-Headers"] =
+  "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization"
+  ngx.header["Access-Control-Max-Age"] = "600"
+end
+
 local function match_url(pattern, url)
   -- 1. Экранируем ТОЛЬКО реальные спецсимволы регулярных выражений.
   -- Порядок внутри [%...] важен, минус ставим в самый конец, чтобы он не означал диапазон.
