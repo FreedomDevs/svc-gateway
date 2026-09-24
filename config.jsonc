@@ -1,6 +1,7 @@
 {
   "jwt_public_key": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAAii6Q5OxBJD2B5qCnqe1pFugQqVpv6rNQnqvSasJKbQ=\n-----END PUBLIC KEY-----",
   "svc-users-host": "http://[fd42:63f2:ba8d:6df6:1::3]",
+  "cors_allow": ["https://sso.elysiac.fun", "https://admin.elysiac.fun"],
   "services": {
     "svc-users": {
       "base_routes": ["/users", "/groups"],
