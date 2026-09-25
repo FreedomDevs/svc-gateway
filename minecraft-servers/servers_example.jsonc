@@ -1,0 +1,18 @@
+{
+  "e9912886-f7ab-495f-bcfb-73d2499d3974": {
+    "name": "Elysia Cloud example",
+    "description": "Крутой cloud, мощный, выживание короче… с лагающими серверами",
+    "icon": "png", // Может быть либо png/jpeg/webp, либо URL, тут png и это будет значить скачивание файла /icons/e9912886-f7ab-495f-bcfb-73d2499d3974.png
+    "banner": null, // null если банера нет, или png/jpeg/webp для скачивания с /banners/<uuid>.<extension>
+    "addresses": [ // Серверы на котоый человека будет направлять при заходе в игру, и сервер который будет добавлятся в список серверов автоматически
+      {"address": "local.elysiac.fun", "description": "Главный сервер"},
+      {"address": "local.elysiac.fun", "description": "Зеркало"}
+    ],
+    "required_mods": {
+      "EAuth": {"url": "https://maven.elysiac.fun/dev/elysium/eauth/EAuth/1.5/EAuth-1.5.jar" } // Название мода (мод будет скачан как EAuth.jar) скачана с URL
+    },
+    "base_clients": {
+      "basic_optimizations": {"description": "Базовая сборка с оптимизациями", "url": "zip"} // zip/tar/tar.zst/tar.gz для скачивания с /base/<uuid>/<name>.<extension> или URL ссылка на скачивание базового клиента
+    }
+  }
+}
