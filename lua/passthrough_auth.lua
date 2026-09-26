@@ -37,7 +37,7 @@ if auth_header then
     auth_type = "user"
     user_id = user_token.uuid
 
-    roles, err = user_service.get_user_roles(config["svc-users-host"], user_id)
+    roles, err = user_service.get_user_roles(config["svc-users-host"], user_id, ngx.var.service_name)
     if not roles then
       ngx.log(ngx.ERR, "Не удалось получить роли пользователя: ", err)
       ngx.status = 500

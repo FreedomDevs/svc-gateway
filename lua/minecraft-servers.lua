@@ -54,21 +54,39 @@ local function json_merge_patch(target, patch)
   return target
 end
 
+local function has_value(tab, val)
+  for _, item in ipairs(tab) do
+    if item == val then
+      return true
+    end
+  end
+  return false
+end
+
 local function check_errors(data)
 
 end
 
+if ngx.ctx.eauth_type ~= "user" then
+  ngx.exit(403)
+end
+local roles = ngx.ctx.eauth_user_roles
+
 local path = ngx.var.uri
 
 if path == "/server.json" then
+  local method = ngx.req.get_method()
+  if method ~= "POST" and method ~= "PATCH" then
+    ngx.exit(405)
+  end
+
   local id = ngx.req.get_uri_args().id
   if id == nil then
     send_error(400, { error = { message = "Query parameter id not provided", code = "ID_NOT_PROVIDED" } })
   end
 
-  local method = ngx.req.get_method()
-  if method ~= "POST" and method ~= "PATCH" then
-    ngx.exit(405)
+  if ! has_value(roles, id) then
+    ngx.exit(403)
   end
 
   ngx.req.read_body()
