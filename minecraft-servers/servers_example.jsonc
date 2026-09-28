@@ -1,5 +1,5 @@
 {
-  "e9912886-f7ab-495f-bcfb-73d2499d3974": {
+  "elysia-cloud-example": {
     "name": "Elysia Cloud example",
     "description": "Крутой cloud, мощный, выживание короче… с лагающими серверами",
     "icon": "png", // Может быть либо png/jpeg/webp, либо URL, тут png и это будет значить скачивание файла /icons/e9912886-f7ab-495f-bcfb-73d2499d3974.png
